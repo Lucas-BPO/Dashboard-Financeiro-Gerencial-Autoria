@@ -2109,7 +2109,11 @@ function applyWorkbookAutoria(wb) {
   buildYearOptions();
 
   // Reset filtros de período e tabela (seleciona todos os anos e meses)
-  selYrs = getAllYears(); selMos = [1,2,3,4,5,6,7,8,9,10,11,12];
+  // Ano padrão = só o ano do período mais recente da base (não todos os anos),
+  // assim o dashboard sempre abre já filtrado no ano com dados mais atuais.
+  const anosDisponiveis = getAllYears();
+  selYrs = anosDisponiveis.length ? [anosDisponiveis[anosDisponiveis.length - 1]] : [];
+  selMos = [1,2,3,4,5,6,7,8,9,10,11,12];
   selProd = []; selPay = []; selCity = [];
   syncYearCheckboxes();
   syncMonthCheckboxes();
@@ -2443,6 +2447,10 @@ buildMonthOptions();
 if (MONTHLY.length === 0 && REMOTE_DATA_URL) {
   loadRemoteData();
 } else {
+  // Ano padrão = só o ano do período mais recente da base (não o valor fixo
+  // declarado no topo do script, que fica desatualizado com o tempo).
+  const anosDisponiveis = getAllYears();
+  selYrs = anosDisponiveis.length ? [anosDisponiveis[anosDisponiveis.length - 1]] : [];
   buildYearOptions();
   syncYearCheckboxes();
   syncMonthCheckboxes();
