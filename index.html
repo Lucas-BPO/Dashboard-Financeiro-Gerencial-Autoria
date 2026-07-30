@@ -60,7 +60,7 @@ body,button,table,th,td{font-family:'Inter',sans-serif}
 .legend-row{display:flex;align-items:center;justify-content:center;gap:12px;font-size:10px;color:#8899aa;margin-bottom:10px;flex-wrap:wrap;font-weight:500}
 .leg-dot{width:9px;height:9px;border-radius:2px;display:inline-block;margin-right:4px;flex-shrink:0}
 .tables-row{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px;margin-bottom:14px}
-.table-box{background:#ffffff;border:0.5px solid #dde3ef;border-radius:12px;padding:14px;display:flex;flex-direction:column;height:340px;box-shadow:0 1px 4px rgba(0,0,0,.05)}
+.table-box{background:#ffffff;border:0.5px solid #dde3ef;border-radius:12px;padding:14px;display:flex;flex-direction:column;height:278px;box-shadow:0 1px 4px rgba(0,0,0,.05)}
 .table-title{font-size:12px;font-weight:600;color:#2a3a50;margin-bottom:10px;display:flex;align-items:center;gap:6px;flex-shrink:0;letter-spacing:.01em}
 .table-title i{font-size:14px;color:#1D7A4C}
 .table-scroll{overflow-y:auto;flex:1}
@@ -104,7 +104,7 @@ tr.dfc-total.dfc-total-negative td:first-child{color:#DE1B31!important}
 .donut-row{display:grid;grid-template-columns:75fr 25fr;gap:10px;margin-bottom:14px}
 .donut-box{background:#ffffff;border:0.5px solid #dde3ef;border-radius:12px;padding:16px;display:flex;flex-direction:column;box-shadow:0 1px 4px rgba(0,0,0,.05)}
 .donut-inner{display:flex;gap:20px;align-items:stretch}
-.donut-canvas-wrap{flex:1;min-width:0;height:310px;position:relative}
+.donut-canvas-wrap{flex:1;min-width:0;height:205px;position:relative}
 
 /* Upload button */
 .upload-btn{display:flex;align-items:center;gap:8px;padding:8px 16px;background:#E8F3EC;border:0.5px solid #1D7A4C60;border-radius:8px;color:#1D7A4C;font-size:11px;font-weight:600;cursor:pointer;transition:.2s;font-family:'Inter',sans-serif;letter-spacing:.03em;flex-shrink:0}
@@ -351,20 +351,31 @@ tr.dfc-total.dfc-total-negative td:first-child{color:#DE1B31!important}
 <!-- ── SEÇÃO DESPESAS ── -->
 <div class="section-header">
   <i class="ti ti-trending-down section-header-icon"></i>
-  <span class="section-header-title">Despesas por Centro de Custo</span>
+  <span class="section-header-title">Despesas por Centros de Custos e Categorias</span>
   <span class="section-header-sub">interage com filtros</span>
 </div>
 <div class="donut-row">
   <div class="donut-box">
-    <div class="chart-title"><i class="ti ti-layout-grid" style="color:#DE1B31"></i>Distribuição de Despesas</div>
+    <div class="chart-title"><i class="ti ti-chart-donut" style="color:#DE1B31"></i>Centros de Custo</div>
+    <div id="cc-chart-sub" style="font-size:10px;color:#8899aa;margin:-3px 0 8px">Clique em uma fatia para detalhar as categorias</div>
     <div class="donut-inner">
       <div class="donut-canvas-wrap"><canvas id="chartDonut"></canvas></div>
     </div>
   </div>
   <div class="chart-box" style="height:auto">
-    <div class="chart-title"><i class="ti ti-table" style="color:#DE1B31"></i>Centros de Custo — Ranking</div>
-    <div>
-      <table id="tbl-desp"><thead><tr><th>Centro de Custo</th><th>Valor</th><th>% do Total</th></tr></thead><tbody></tbody></table>
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:2px">
+      <div class="chart-title" style="margin-bottom:0"><i class="ti ti-list-tree" style="color:#DE1B31"></i>Categorias Financeiras</div>
+      <button onclick="ccReset()" style="font-size:9px;font-weight:600;color:#3d6a5a;background:transparent;border:0.5px solid #dde3ef;
+               border-radius:5px;padding:3px 8px;cursor:pointer;letter-spacing:.05em;font-family:inherit;
+               text-transform:uppercase;transition:.15s" onmouseover="this.style.color='#1D7A4C';this.style.borderColor='#1D7A4C'" onmouseout="this.style.color='#3d6a5a';this.style.borderColor='#dde3ef'">
+        Limpar seleção
+      </button>
+    </div>
+    <div id="cc-context-label" style="font-size:10px;color:#8899aa;margin-bottom:6px">Todos os centros de custo · clique em uma fatia para detalhar</div>
+    <div class="table-scroll" style="max-height:200px">
+      <table id="tbl-cc-cat">
+        <colgroup><col style="width:60.9%"><col style="width:20.8%"><col style="width:18.3%"></colgroup>
+        <thead><tr><th>Categoria</th><th>Valor</th><th>% do Total</th></tr></thead><tbody></tbody></table>
     </div>
   </div>
 </div>
@@ -376,43 +387,37 @@ tr.dfc-total.dfc-total-negative td:first-child{color:#DE1B31!important}
   <span class="section-header-sub" id="pag-periodo-label">Total de saídas · seleção por subcategoria</span>
 </div>
 
-<div style="background:#ffffff;border:0.5px solid #dde3ef;border-radius:12px;padding:16px;margin-bottom:14px;box-shadow:0 1px 4px rgba(0,0,0,.05)">
-  <div style="display:grid;grid-template-columns:1fr 400px;gap:18px;align-items:start">
+<div class="donut-row">
+  <div class="donut-box">
+    <div class="chart-title" style="margin-bottom:6px">
+      <i class="ti ti-chart-bar" style="color:#DE1B31"></i>
+      <span id="pag-chart-title">Total de Pagamentos por mês</span>
+    </div>
+    <div class="legend-row" style="margin-bottom:8px">
+      <span><span class="leg-dot" style="background:#DE1B31"></span>Pagamentos</span>
+      <span><span class="leg-dot" style="background:#901220"></span>Variação % m/m</span>
+    </div>
+    <div style="position:relative;width:100%;height:203px">
+      <canvas id="chartPAG"></canvas>
+    </div>
+  </div>
 
-    <!-- Gráfico -->
-    <div>
-      <div class="chart-title" style="margin-bottom:6px">
-        <i class="ti ti-chart-bar" style="color:#DE1B31"></i>
-        <span id="pag-chart-title">Total de Pagamentos por mês</span>
+  <div class="chart-box" style="height:auto">
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:6px">
+      <div class="chart-title" style="margin-bottom:0">
+        <i class="ti ti-list-tree" style="color:#DE1B31"></i>
+        Subcategorias
       </div>
-      <div class="legend-row" style="margin-bottom:8px">
-        <span><span class="leg-dot" style="background:#DE1B31"></span>Pagamentos</span>
-        <span><span class="leg-dot" style="background:#901220"></span>Variação % m/m</span>
-      </div>
-      <div style="position:relative;width:100%;height:240px">
-        <canvas id="chartPAG"></canvas>
-      </div>
+      <button onclick="pagReset()" style="font-size:9px;font-weight:600;color:#3d6a5a;background:transparent;border:0.5px solid #dde3ef;
+               border-radius:5px;padding:3px 8px;cursor:pointer;letter-spacing:.05em;font-family:inherit;
+               text-transform:uppercase;transition:.15s" onmouseover="this.style.color='#1D7A4C';this.style.borderColor='#1D7A4C'" onmouseout="this.style.color='#3d6a5a';this.style.borderColor='#dde3ef'">
+        Limpar seleção
+      </button>
     </div>
 
-    <!-- Tabela de categorias netas -->
-    <div style="display:flex;flex-direction:column">
-      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:6px">
-        <div class="chart-title" style="margin-bottom:0">
-          <i class="ti ti-list-tree" style="color:#DE1B31"></i>
-          Subcategorias
-        </div>
-        <button onclick="pagReset()" style="font-size:9px;font-weight:600;color:#3d6a5a;background:transparent;border:0.5px solid #dde3ef;
-                 border-radius:5px;padding:3px 8px;cursor:pointer;letter-spacing:.05em;font-family:inherit;
-                 text-transform:uppercase;transition:.15s" onmouseover="this.style.color='#1D7A4C';this.style.borderColor='#1D7A4C'" onmouseout="this.style.color='#3d6a5a';this.style.borderColor='#dde3ef'">
-          Limpar seleção
-        </button>
-      </div>
-
-      <div id="pag-cat-table" style="overflow-y:auto;max-height:290px;padding-right:2px">
-        <!-- preenchido via JS -->
-      </div>
+    <div id="pag-cat-table" class="table-scroll" style="max-height:218px;padding-right:2px">
+      <!-- preenchido via JS -->
     </div>
-
   </div>
 </div>
 
@@ -466,6 +471,12 @@ let REC_RAW=[];
 // ── DADOS DESPESAS ──────────────────────────────────────────────────────────────
 let DESP_RAW=[];
 
+// ── DADOS CENTROS DE CUSTO ────────────────────────────────────────────────
+// Formato longo: uma linha por mês+centro de custo+categoria (aba "CENTROS DE
+// CUSTO" da base). Populado ao carregar/atualizar o Excel — vazio até a
+// primeira importação.
+let CC_RAW=[];
+
 // ── DADOS DFC ──────────────────────────────────────────────────────────────
 let DFC_MONTHS=[];
 let DFC_ROWS=[];
@@ -474,6 +485,7 @@ let DFC_ROWS=[];
 const MES=['','Jan','Fev','Mar','Abr','Mai','Jun','Jul','Ago','Set','Out','Nov','Dez'];
 let selYrs=[2026], selMos=[1,2,3,4,5,6,7,8,9,10,11,12], selProd=[], selPay=[], selCity=[], cRB=null, cRL=null, cFAT=null, cREC=null, cDonut=null, cPAG=null;
 let pagSelLabels = null; // null = todas as netas selecionadas
+let ccSel = null; // null = todos os centros de custo; string = centro de custo selecionado no donut
 
 const fmt=v=>'R$ '+v.toLocaleString('pt-BR',{minimumFractionDigits:0,maximumFractionDigits:0});
 const fmtD=v=>{
@@ -904,7 +916,7 @@ function updatePagChart(){
       scales:{
         x:{ticks:{font:{size:9,family:'Inter'},color:'#8899aa',maxRotation:45,autoSkip:false},
            grid:{display:true,color:'rgba(0,0,0,0.05)',drawTicks:false},border:{color:'#dde3ef'}},
-        y:{position:'left',ticks:{font:{size:9,family:'Inter'},color:'#8899aa',
+        y:{position:'left',ticks:{font:{size:9,family:'Inter'},color:'#8899aa',stepSize:50000,
              callback:v=>'R$'+(v>=1000?(v/1000).toFixed(0)+'k':v)},
            grid:{display:false},border:{color:'#dde3ef'}},
         y2:{position:'right',ticks:{font:{size:9,family:'Inter'},color:lineColor,callback:v=>v+'%'},
@@ -914,207 +926,231 @@ function updatePagChart(){
   });
 }
 
-// ── TREEMAP CANVAS (sem dependência externa) ──────────────────────────────────────────────────────────────
-function _squarify(items, x, y, w, h) {
-  const rects = [];
-  if (!items.length || w < 1 || h < 1) return rects;
-  const totalVal = items.reduce((s, d) => s + d.val, 0);
-  if (!totalVal) return rects;
-
-  const nodes = items.map(d => ({...d, pa: d.val / totalVal * (w * h)}));
-
-  function worstAspect(row, side) {
-    if (!row.length) return Infinity;
-    const s = row.reduce((t, n) => t + n.pa, 0);
-    const maxPa = Math.max(...row.map(n => n.pa));
-    const minPa = Math.min(...row.map(n => n.pa));
-    return Math.max(side * side * maxPa / (s * s), s * s / (side * side * minPa));
-  }
-
-  function flushRow(row, rect) {
-    const s = row.reduce((t, n) => t + n.pa, 0);
-    const isWide = rect.w >= rect.h;
-    if (isWide) {
-      const stripW = s / rect.h;
-      let px = rect.x;
-      row.forEach((node, i) => {
-        const iw = node.pa / rect.h;
-        const last = i === row.length - 1;
-        const fw = last ? Math.max(0, rect.x + stripW - px) : iw;
-        if (fw > 0.5) rects.push({...node, x: px, y: rect.y, w: fw, h: rect.h});
-        px += iw;
-      });
-      return {x: rect.x + stripW, y: rect.y, w: Math.max(0, rect.w - stripW), h: rect.h};
-    } else {
-      const stripH = s / rect.w;
-      let py = rect.y;
-      row.forEach((node, i) => {
-        const ih = node.pa / rect.w;
-        const last = i === row.length - 1;
-        const fh = last ? Math.max(0, rect.y + stripH - py) : ih;
-        if (fh > 0.5) rects.push({...node, x: rect.x, y: py, w: rect.w, h: fh});
-        py += ih;
-      });
-      return {x: rect.x, y: rect.y + stripH, w: rect.w, h: Math.max(0, rect.h - stripH)};
-    }
-  }
-
-  let rem = [...nodes], row = [], rect = {x, y, w, h};
-  while (rem.length) {
-    if (rect.w < 1 || rect.h < 1) break;
-    const side = Math.min(rect.w, rect.h);
-    const next = rem[0];
-    if (!row.length) {
-      row.push(next); rem.shift();
-    } else {
-      if (worstAspect([...row, next], side) <= worstAspect(row, side)) {
-        row.push(next); rem.shift();
-      } else {
-        rect = flushRow(row, rect); row = [];
-      }
-    }
-  }
-  if (row.length && rect.w >= 1 && rect.h >= 1) flushRow(row, rect);
-  return rects;
+// ── DONUT CENTROS DE CUSTO ────────────────────────────────────────────────
+// Rampa por relevância: laranja (menor centro de custo) → vermelho escuro
+// (maior), mesmo tom de vermelho já usado na rampa de Subcategorias da
+// Análise de Pagamentos — reaproveitado aqui para manter a mesma linguagem
+// visual entre as duas seções de despesas. Cor cheia (opaca) por padrão；
+// a versão "dim" (translúcida) só é usada nas fatias NÃO selecionadas quando
+// existe uma seleção ativa, pra fazer a fatia escolhida se destacar.
+const CC_RAMP_DARK  = [0x4A,0x0C,0x10]; // vermelho escuro (maior centro de custo)
+const CC_RAMP_LIGHT = [0xF7,0x67,0x07]; // laranja (menor centro de custo)
+function ccRampColor(i, n, alpha){
+  const t = n<=1 ? 0 : i/(n-1);
+  const rgb = CC_RAMP_DARK.map((v,k)=>Math.round(v+(CC_RAMP_LIGHT[k]-v)*t));
+  return alpha===undefined
+    ? '#'+rgb.map(v=>v.toString(16).padStart(2,'0')).join('')
+    : `rgba(${rgb[0]},${rgb[1]},${rgb[2]},${alpha})`;
 }
 
-function _truncTM(ctx, text, maxW) {
-  if (ctx.measureText(text).width <= maxW) return text;
-  while (text.length > 1 && ctx.measureText(text + '…').width > maxW) text = text.slice(0, -1);
-  return text + '…';
+// Ícones (Tabler, cor neutra fixa) por categoria financeira — identidade visual
+// rápida na tabela "Categorias Financeiras". Fallback genérico para nomes não
+// mapeados (ex.: categorias novas incluídas futuramente na planilha).
+const CC_CATEGORY_ICONS = {
+  'facebook ads':'ti-brand-facebook', 'google ads':'ti-brand-google',
+  'agência de lançamento':'ti-rocket', 'brindes':'ti-gift',
+  'cursos e treinamentos':'ti-school', 'designer':'ti-palette',
+  'fgts':'ti-building-bank', 'inss + irrf':'ti-receipt-tax',
+  'lanches / refeições':'ti-coffee', 'licenças e softwares':'ti-apps',
+  'máquinas e equipamentos':'ti-device-desktop', 'marketing/publicidade/eventos':'ti-speakerphone',
+  'medicina do trabalho':'ti-stethoscope', 'passagens/viagens/estadia':'ti-plane',
+  'produção de conteúdo':'ti-video', 'rescisão':'ti-file-off',
+  'salários':'ti-wallet', 'vale refeição':'ti-tools-kitchen-2', 'vale transporte':'ti-bus',
+  'das - simples nacional':'ti-file-percent', 'taxa de transferência - hotmart':'ti-transfer',
+  'enem':'ti-certificate', 'férias':'ti-beach', 'língua estrangeira':'ti-language',
+  'material didático':'ti-book', 'redação':'ti-pencil', 'seguro de vida':'ti-shield-heart',
+  'simulado':'ti-clipboard-list', 'uber':'ti-car',
+  'distribuição de lucros - oficial':'ti-chart-pie', 'empréstimo concedido à terceiro':'ti-cash',
+  'pró-labore':'ti-briefcase', 'taxas e licenciamentos':'ti-license',
+  'correios':'ti-mail', 'papelaria (impressão)':'ti-printer', 'produtos de limpeza':'ti-droplet',
+  'aluguel + iptu':'ti-home', 'cemig':'ti-bolt', 'certificado digital':'ti-certificate',
+  'condomínio':'ti-building', 'confraternização':'ti-confetti',
+  'documento de arrecadação estadual - dae':'ti-file-invoice', 'encargos':'ti-receipt',
+  'estacionamento':'ti-square-letter-p', 'honorários advocatícios':'ti-gavel',
+  'imposto de renda retido na fonte':'ti-receipt-tax', 'internet':'ti-wifi', 'iof':'ti-percentage',
+  'juros e multas':'ti-alert-triangle', 'manutenção predial':'ti-tool',
+  'serviço de conservação e limpeza':'ti-spray', 'taxa de fiscalização de localização e funcionamento - tflf':'ti-building-store',
+  'telefonia móvel':'ti-phone', 'vendas reembolsadas e chargeback':'ti-arrow-back-up',
+  'influenciadores':'ti-users', 'bpo':'ti-briefcase', 'honorários contábeis':'ti-calculator',
+};
+function ccCategoryIcon(cat){
+  return CC_CATEGORY_ICONS[String(cat||'').trim().toLowerCase()] || 'ti-tag';
 }
 
-function renderTreemap(canvasId, items, total) {
-  const canvas = document.getElementById(canvasId);
-  if (!canvas) return;
-  const par = canvas.parentElement;
-  const W = par.clientWidth || 600;
-  const H = par.clientHeight || 310;
-  const DPR = window.devicePixelRatio || 1;
-  canvas.width = W * DPR; canvas.height = H * DPR;
-  canvas.style.width = W + 'px'; canvas.style.height = H + 'px';
-  const ctx = canvas.getContext('2d');
-  ctx.scale(DPR, DPR);
-  ctx.clearRect(0, 0, W, H);
-  if (!items.length) return;
+// Aplica o estado de seleção (fatia puxada pra fora + as outras esmaecidas)
+// no chart JÁ existente, sem destruir/recriar a instância — só atualiza os
+// arrays do dataset e chama update('none') (sem animação). Isso é o que
+// resolve tanto o "gira e parece que nada acontece" (a recriação disparava
+// a animação padrão de entrada do Chart.js a cada clique) quanto a falta de
+// feedback claro de seleção.
+function applyCCSelectionVisuals(){
+  if (!cDonut) return;
+  const ranking = cDonut._ccRanking || [];
+  const ds = cDonut.data.datasets[0];
+  const idx = ccSel ? ranking.findIndex(r=>r.label===ccSel) : -1;
 
-  const sorted = [...items].sort((a, b) => b.val - a.val);
-  const rects = _squarify(sorted, 0, 0, W, H);
-  const PAD = 1.5;
+  ds.offset = ranking.map((r,i)=> i===idx ? 12 : 0);
+  ds.backgroundColor = ranking.map((r,i)=> (idx===-1 || i===idx) ? r.colorSolid : r.colorDim);
+  cDonut.update('none');
 
-  rects.forEach(rect => {
-    const px = rect.x + PAD, py = rect.y + PAD;
-    const pw = rect.w - PAD * 2, ph = rect.h - PAD * 2;
-    if (pw < 2 || ph < 2) return;
+  const sub = document.getElementById('cc-chart-sub');
+  if (sub) {
+    sub.textContent = ccSel
+      ? `${ccSel} selecionado · clique novamente para limpar`
+      : 'Clique em uma fatia para detalhar as categorias';
+  }
+}
 
-    /* ── fundo com cantos arredondados ── */
-    ctx.fillStyle = rect.color;
-    ctx.beginPath();
-    const cr = Math.min(4, pw / 2, ph / 2);
-    ctx.moveTo(px + cr, py);
-    ctx.arcTo(px + pw, py, px + pw, py + ph, cr);
-    ctx.arcTo(px + pw, py + ph, px, py + ph, cr);
-    ctx.arcTo(px, py + ph, px, py, cr);
-    ctx.arcTo(px, py, px + pw, py, cr);
-    ctx.closePath();
-    ctx.fill();
+function ccReset(){
+  ccSel = null;
+  if (cDonut && cDonut._ccRanking) {
+    applyCCSelectionVisuals();
+    updateCCCatTable(cDonut._ccRanking, cDonut._ccTotal);
+  } else {
+    updateDonut();
+  }
+}
+window.ccReset = ccReset;
 
-    /* ── texto ── */
-    if (pw < 10 || ph < 9) return;
+function ccSelectByIndex(i){
+  const ranking = cDonut && cDonut._ccRanking;
+  if (!ranking || !ranking[i]) return;
+  const label = ranking[i].label;
+  ccSel = (ccSel===label) ? null : label;
+  applyCCSelectionVisuals();
+  updateCCCatTable(ranking, cDonut._ccTotal);
+}
 
-    // font máxima que caiba na altura e largura
-    const fs = Math.min(13, Math.max(7, Math.floor(Math.min(ph * 0.34, pw * 0.17))));
-    const fsS = Math.max(7, fs - 1);
+// Popup flutuante ao passar o mouse sobre uma fatia — reaproveita o mesmo
+// elemento/estilo do popup de detalhamento do DFC (_dfcPopupEnsure) pra manter
+// a identidade visual consistente, mas só mostra o resumo (nome, valor e %
+// do total de despesas); o detalhamento por categoria fica a cargo do clique
+// (tabela "Categorias Financeiras" ao lado).
+function _ccPopupShow(nativeEvent, ccData, totalAll){
+  _dfcCancelHide();
+  const popup = _dfcPopupEnsure();
 
-    ctx.textAlign = 'center';
-    ctx.textBaseline = 'middle';
-    ctx.shadowColor = 'rgba(0,0,0,0.45)';
-    ctx.shadowBlur = 3;
+  popup.innerHTML = `
+    <div style="padding:11px 14px;flex-shrink:0;
+                display:flex;justify-content:space-between;align-items:flex-start;gap:16px">
+      <div>
+        <div style="font-size:11px;font-weight:700;color:#2a3a50;text-transform:uppercase;
+                    letter-spacing:.02em">${ccData.label}</div>
+        <div style="font-size:9px;color:#8899aa;margin-top:3px">${(ccData.val/totalAll*100).toFixed(1)}% do total de despesas</div>
+      </div>
+      <span style="font-size:13px;font-weight:700;color:#DE1B31;padding-top:1px;white-space:nowrap">${fmt(ccData.val)}</span>
+    </div>`;
 
-    const cx = px + pw / 2;
-    const maxLineW = pw - 8;
-
-    ctx.font = `600 ${fs}px Inter,sans-serif`;
-    ctx.fillStyle = 'rgba(255,255,255,.93)';
-
-    if (ph >= 20 && pw >= 26) {
-      // Quebra de texto: divide palavras em linhas que cabem na largura
-      const words = rect.label.split(' ');
-      const lines = [];
-      let cur = '';
-      for (const word of words) {
-        const test = cur ? cur + ' ' + word : word;
-        if (ctx.measureText(test).width <= maxLineW) {
-          cur = test;
-        } else {
-          if (cur) lines.push(cur);
-          cur = ctx.measureText(word).width <= maxLineW ? word : _truncTM(ctx, word, maxLineW);
-        }
-      }
-      if (cur) lines.push(cur);
-
-      const lineH = fs + 2;
-      const totalH = lines.length * lineH;
-
-      if (totalH <= ph - 4) {
-        // Cabe com quebra de linha: renderiza centralizado verticalmente
-        let y0 = py + ph / 2 - totalH / 2 + lineH / 2;
-        lines.forEach(line => { ctx.fillText(line, cx, y0); y0 += lineH; });
-      } else {
-        // Não cabe com quebra: uma linha truncada no centro
-        ctx.fillText(_truncTM(ctx, rect.label, maxLineW), cx, py + ph / 2);
-      }
-    } else if (pw >= 14 && ph >= 10) {
-      // Bloco pequeno: nome truncado com font reduzida
-      ctx.font = `600 ${Math.max(7, fs - 1)}px Inter,sans-serif`;
-      ctx.fillText(_truncTM(ctx, rect.label, pw - 4), cx, py + ph / 2);
-    }
-
-    ctx.shadowBlur = 0;
-    ctx.shadowColor = 'transparent';
+  popup.style.display = 'flex';
+  requestAnimationFrame(() => {
+    const pw = popup.offsetWidth  || 260;
+    const ph = popup.offsetHeight || 60;
+    const vw = window.innerWidth, vh = window.innerHeight;
+    let left = nativeEvent.clientX + 14;
+    if (left + pw > vw - 8) left = nativeEvent.clientX - pw - 14;
+    let top = nativeEvent.clientY + 14;
+    if (top + ph > vh - 8) top = nativeEvent.clientY - ph - 14;
+    popup.style.left = Math.max(4, left) + 'px';
+    popup.style.top  = Math.max(4, top)  + 'px';
   });
 }
 
-// ── DONUT DESPESAS ──────────────────────────────────────────────────────────────
-const DONUT_KEYS=['presidencia','impostos','pedagogico','marketing','custos','gestao','empresa','comercial','administrativo'];
-const DONUT_LABELS=['Presidência','Impostos','Pedagógico','Marketing','Custos de Produtos','Gestão e Estratégia','Empresa','Comercial','Administrativo'];
+function updateCCCatTable(ranking, total){
+  const label = document.getElementById('cc-context-label');
+  if (label) {
+    label.textContent = ccSel
+      ? `Categorias de "${ccSel}"`
+      : 'Todos os centros de custo · clique em uma fatia para detalhar';
+  }
 
-// Rampa por relevância: mesma família de vermelho da tabela de Subcategorias
-// (Análise de Pagamentos) — vermelho quase-preto (maior centro de custo) → vermelho-rosado
-// mais claro (menor). Faixa ampliada de propósito: com poucos passos de diferença entre
-// os extremos, blocos vizinhos ficavam quase idênticos. Ambos os extremos ainda passam
-// no teste de contraste do texto branco sobreposto (~5.4:1 no escuro, ~3.5:1 no claro).
-const DONUT_RAMP_DARK=[0x4A,0x0C,0x10];   // vermelho quase-preto
-const DONUT_RAMP_LIGHT=[0xD6,0x63,0x6F];  // vermelho-rosado claro (mesma família, sem virar laranja)
-function donutRampColor(i, n){
-  const t = n<=1 ? 0 : i/(n-1);
-  const rgb = DONUT_RAMP_DARK.map((v,k)=>Math.round(v+(DONUT_RAMP_LIGHT[k]-v)*t));
-  return '#'+rgb.map(v=>v.toString(16).padStart(2,'0')).join('');
+  let rows = CC_RAW.filter(r=>matchFilter(r.ano,r.mes));
+  if (ccSel) rows = rows.filter(r=>r.cc===ccSel);
+
+  const catMap = {};
+  rows.forEach(r=>{ catMap[r.cat] = (catMap[r.cat]||0) + r.val; });
+  const scopeTotal = Object.values(catMap).reduce((s,v)=>s+v,0) || 1;
+  const arr = Object.entries(catMap).map(([cat,val])=>({cat,val})).sort((a,b)=>b.val-a.val);
+
+  document.querySelector('#tbl-cc-cat tbody').innerHTML = arr.length ? arr.map(c=>`
+    <tr>
+      <td><i class="ti ${ccCategoryIcon(c.cat)}" style="color:#8899aa;font-size:13px;vertical-align:-2px;margin-right:6px"></i>${c.cat}</td>
+      <td class="val-red">${fmt(c.val)}</td>
+      <td style="text-align:right;color:#8899aa">${(c.val/scopeTotal*100).toFixed(1)}%</td>
+    </tr>`).join('') : `<tr><td colspan="3" style="text-align:center;color:#b0bcc8;padding:14px 0">Sem dados para o período selecionado</td></tr>`;
 }
 
 function updateDonut(){
-  const rows=DESP_RAW.filter(r=>matchFilter(r.ano,r.mes));
-  const totais=DONUT_KEYS.map(k=>rows.reduce((s,r)=>s+(r[k]||0),0));
-  const total=totais.reduce((s,v)=>s+v,0)||1;
+  const rows = CC_RAW.filter(r=>matchFilter(r.ano,r.mes));
+  const totals = {};
+  rows.forEach(r=>{ totals[r.cc] = (totals[r.cc]||0) + r.val; });
+  const total = Object.values(totals).reduce((s,v)=>s+v,0) || 1;
 
-  try { if(cDonut && cDonut.destroy) cDonut.destroy(); } catch(e) {}
-  cDonut = null;
-  // Ordena por relevância (maior → menor) e atribui a cor da rampa por posição no ranking
-  const ranking=DONUT_LABELS.map((l,i)=>({label:l,val:totais[i]}))
+  // Ordena por relevância (maior → menor); a legenda do Chart.js segue a
+  // mesma ordem do dataset, então já sai em ordem decrescente.
+  const ranking = Object.entries(totals)
+    .map(([label,val])=>({label,val}))
     .filter(d=>d.val>0)
     .sort((a,b)=>b.val-a.val)
-    .map((d,i,arr)=>({...d,color:donutRampColor(i,arr.length)}));
+    .map((d,i,arr)=>({...d, colorSolid: ccRampColor(i,arr.length), colorDim: ccRampColor(i,arr.length,0.32)}));
 
-  renderTreemap('chartDonut', ranking, total);
+  // Se o centro selecionado não existir mais no período filtrado, limpa a seleção
+  if (ccSel && !ranking.some(r=>r.label===ccSel)) ccSel = null;
 
-  // Tabela ranking
-  const medals=['🥇','🥈','🥉'];
-  document.querySelector('#tbl-desp tbody').innerHTML=ranking.map((r,i)=>`
-    <tr>
-      <td><span style="margin-right:4px">${i<3?medals[i]:''}</span><span style="color:${r.color}">●</span> ${r.label}</td>
-      <td class="val-red">${fmt(r.val)}</td>
-      <td style="text-align:right;color:#8899aa">${(r.val/total*100).toFixed(1)}%</td>
-    </tr>`).join('');
+  try { if (cDonut && cDonut.destroy) cDonut.destroy(); } catch(e) {}
+  cDonut = null;
+
+  const canvas = document.getElementById('chartDonut');
+  cDonut = new Chart(canvas.getContext('2d'), {
+    type: 'doughnut',
+    data: {
+      labels: ranking.map(r=>r.label),
+      datasets: [{
+        data: ranking.map(r=>r.val),
+        backgroundColor: ranking.map(r=>r.colorSolid),
+        borderColor: '#ffffff',
+        borderWidth: 3,
+        offset: ranking.map(()=>0),
+        hoverOffset: 6
+      }]
+    },
+    options: {
+      responsive: true, maintainAspectRatio: false, cutout: '36%', layout: { padding: 0 },
+      transitions: { active: { animation: { duration: 150 } } },
+      plugins: {
+        legend: {
+          position: 'right',
+          labels: {
+            boxWidth: 9, boxHeight: 9, padding: 10, font: {size:10, family:'Inter'}, color:'#4e5e72',
+            generateLabels: (chart) => chart.data.labels.map((lbl,i) => {
+              const r = ranking[i];
+              const dimmed = ccSel && ccSel !== lbl;
+              return {
+                text: ' ' + lbl,
+                fillStyle: r ? (dimmed ? r.colorDim : r.colorSolid) : '#8899aa',
+                strokeStyle: r ? r.colorSolid : '#8899aa',
+                lineWidth: ccSel === lbl ? 1.5 : 0,
+                index: i
+              };
+            })
+          },
+          onClick: (evt, item) => ccSelectByIndex(item.index)
+        },
+        tooltip: { enabled: false } // substituído pelo popup detalhado no hover
+      },
+      onClick: (evt, elements) => { if (elements.length) ccSelectByIndex(elements[0].index); },
+      onHover: (evt, elements) => {
+        canvas.style.cursor = elements.length ? 'pointer' : 'default';
+        if (elements.length) _ccPopupShow(evt.native, ranking[elements[0].index], total);
+        else _dfcScheduleHide();
+      }
+    }
+  });
+  cDonut._ccRanking = ranking; // reaproveitado pelo clique da legenda/fatia
+  cDonut._ccTotal = total;
+  canvas.onmouseleave = () => _dfcScheduleHide();
+
+  applyCCSelectionVisuals(); // reaplica a seleção atual (offset/dim) sem animação extra
+  updateCCCatTable(ranking, total);
 }
 
 // ── TABELAS FATURAMENTOS e RECEITAS ──────────────────────────────────────────────────────────────
@@ -1922,18 +1958,12 @@ function parseSALDOS(ws) {
     if (idx < 0) idx = cols.findIndex((c, i) => i !== iDATA && c.includes('TOTAL'));
     return idx;
   })();
-  // Centros de custo — lidos se existirem na aba (caso a aba seja a antiga DESPESAS renomeada)
-  const iPRES  = fc('PRESIDENCIA');
-  const iIMP   = fc('IMPOSTO');
-  const iPEDAG = fc('PEDAGOG');
-  const iMARK  = fc('MARKETING');
-  const iCUST  = fc('CUSTO');
-  const iGEST  = fc('GESTAO');
-  const iEMP   = fc('EMPRESA');
-  const iCOM   = fc('COMERCIAL');
-  const iADM   = fc('ADMINISTRATIVO');
   if (iDATA < 0) return false;
 
+  // A aba SALDOS representa só saldos de caixa — centros de custo vêm
+  // exclusivamente da aba CENTROS DE CUSTO (ver parseCENTROSCUSTO). Eventuais
+  // colunas de centro de custo ainda presentes nesta aba são ignoradas de
+  // propósito e serão removidas da planilha futuramente.
   const tmp = [];
   for (let i = hdr + 1; i < data.length; i++) {
     const row = data[i];
@@ -1942,21 +1972,47 @@ function parseSALDOS(ws) {
     if (!d || isNaN(d.getTime())) continue;
     const ano = d.getFullYear(), mes = d.getMonth() + 1;
     if (ano < 2020 || ano > 2100) continue;
-    const prev = DESP_RAW.find(r => r.ano === ano && r.mes === mes) || {};
-    // Para cada centro de custo: usa valor da planilha se a coluna existir, caso contrário mantém histórico
-    const g = (idx, key) => idx >= 0 ? safeNum(row[idx]) : (prev[key] || 0);
     tmp.push({
       ano, mes,
-      presidencia: g(iPRES,'presidencia'), impostos:      g(iIMP,'impostos'),
-      pedagogico:  g(iPEDAG,'pedagogico'), marketing:     g(iMARK,'marketing'),
-      custos:      g(iCUST,'custos'),      gestao:        g(iGEST,'gestao'),
-      empresa:     g(iEMP,'empresa'),   comercial:     g(iCOM,'comercial'),
-      administrativo: g(iADM,'administrativo'),
       cc:   safeNum(row[iCC]),  hm:   safeNum(row[iHM]),
       cdb:  safeNum(row[iCDB]), stot: safeNum(row[iSTOT])
     });
   }
   if (tmp.length) { DESP_RAW = tmp; return true; }
+  return false;
+}
+
+// Aba CENTROS DE CUSTO: formato longo — uma linha por mês + centro de custo +
+// categoria (colunas Data | Centro de custo | Categoria | Valor). É a única
+// fonte usada para a seção "Despesas por Centros de Custos e Categorias".
+function parseCENTROSCUSTO(ws) {
+  const data = XLSX.utils.sheet_to_json(ws, { header: 1, defval: null });
+  let hdr = -1;
+  for (let i = 0; i < Math.min(data.length, 5); i++) {
+    const r = data[i].map(c => String(c || '').trim().toUpperCase());
+    if (r.some(c => c.includes('CENTRO')) && r.some(c => c.includes('CATEGORIA'))) { hdr = i; break; }
+  }
+  if (hdr < 0) return false;
+
+  const cols  = data[hdr].map(c => String(c || '').trim().toUpperCase());
+  const iDATA = cols.findIndex(c => c.includes('DATA') || c.includes('MES') || c.includes('COMPETENCIA'));
+  const iCC   = cols.findIndex(c => c.includes('CENTRO'));
+  const iCAT  = cols.findIndex(c => c.includes('CATEGORIA'));
+  const iVAL  = cols.findIndex(c => c.includes('VALOR'));
+  if ([iDATA, iCC, iCAT, iVAL].includes(-1)) return false;
+
+  const tmp = [];
+  for (let i = hdr + 1; i < data.length; i++) {
+    const row = data[i];
+    if (!row[iDATA] || !row[iCC]) continue;
+    const d = typeof row[iDATA] === 'number' ? excelDateToISO(row[iDATA]) : new Date(row[iDATA]);
+    if (isNaN(d)) continue;
+    const cc  = String(row[iCC]).trim();
+    const cat = String(row[iCAT] || '').trim();
+    if (!cc || !cat) continue;
+    tmp.push({ ano: d.getFullYear(), mes: d.getMonth() + 1, cc, cat, val: Math.abs(safeNum(row[iVAL])) });
+  }
+  if (tmp.length) { CC_RAW = tmp; return true; }
   return false;
 }
 
@@ -2092,6 +2148,7 @@ function applyWorkbookAutoria(wb) {
   const wsRec    = findSheet('RECEITAS', 'RECEITA');
   const wsDesp   = findSheet('DESPESAS', 'DESPESA');
   const wsSald   = findSheet('SALDOS', 'SALDO');
+  const wsCC     = findSheet('CENTROS DE CUSTO', 'CENTRO DE CUSTO', 'CENTROS DE CUSTOS');
   const wsDfc    = findSheet('DFC', 'FLUXO DE CAIXA');
 
   if (wsVendas && parseVENDAS(wsVendas))   results.push('VENDAS');
@@ -2099,6 +2156,7 @@ function applyWorkbookAutoria(wb) {
   if (wsRec    && parseRECEITAS(wsRec))     results.push('RECEITAS');
   if (wsDesp   && parseDESPESAS(wsDesp))    results.push('DESPESAS');
   if (!wsDesp && wsSald && parseSALDOS(wsSald)) results.push('SALDOS');
+  if (wsCC     && parseCENTROSCUSTO(wsCC)) results.push('CENTROS DE CUSTO');
   if (wsDfc    && parseDFC(wsDfc))          results.push('DFC');
 
   if (results.length === 0) {
@@ -2114,7 +2172,7 @@ function applyWorkbookAutoria(wb) {
   const anosDisponiveis = getAllYears();
   selYrs = anosDisponiveis.length ? [anosDisponiveis[anosDisponiveis.length - 1]] : [];
   selMos = [1,2,3,4,5,6,7,8,9,10,11,12];
-  selProd = []; selPay = []; selCity = [];
+  selProd = []; selPay = []; selCity = []; ccSel = null;
   syncYearCheckboxes();
   syncMonthCheckboxes();
   updateRowSelections();
@@ -2280,6 +2338,7 @@ function buildDashHTML() {
   src = replaceVarAutoria(src, 'let FAT_RAW=',       'let FAT_RAW='       + JSON.stringify(FAT_RAW)       + ';');
   src = replaceVarAutoria(src, 'let REC_RAW=',       'let REC_RAW='       + JSON.stringify(REC_RAW)       + ';');
   src = replaceVarAutoria(src, 'let DESP_RAW=',      'let DESP_RAW='      + JSON.stringify(DESP_RAW)      + ';');
+  src = replaceVarAutoria(src, 'let CC_RAW=',        'let CC_RAW='        + JSON.stringify(CC_RAW)        + ';');
   src = replaceVarAutoria(src, 'let DFC_ROWS=',      'let DFC_ROWS='      + JSON.stringify(DFC_ROWS)      + ';');
   src = replaceVarAutoria(src, 'let DFC_MONTHS=',    'let DFC_MONTHS='    + JSON.stringify(DFC_MONTHS)    + ';');
   src = replaceVarAutoria(src, 'let DFC_MONTHS_PAG=','let DFC_MONTHS_PAG='+ JSON.stringify(DFC_MONTHS_PAG)+ ';');
@@ -2302,10 +2361,23 @@ function buildShellHTML() {
   src = replaceVarAutoria(src, 'let FAT_RAW=',       'let FAT_RAW=[];');
   src = replaceVarAutoria(src, 'let REC_RAW=',       'let REC_RAW=[];');
   src = replaceVarAutoria(src, 'let DESP_RAW=',      'let DESP_RAW=[];');
+  // CC_RAW é reconstruído do zero a cada parseCENTROSCUSTO (sem mecanismo de
+  // update-por-rótulo como o DFC_NETAS), então pode ser zerado com segurança.
+  src = replaceVarAutoria(src, 'let CC_RAW=',        'let CC_RAW=[];');
   src = replaceVarAutoria(src, 'let DFC_ROWS=',      'let DFC_ROWS=[];');
   src = replaceVarAutoria(src, 'let DFC_MONTHS=',    'let DFC_MONTHS=[];');
   src = replaceVarAutoria(src, 'let DFC_MONTHS_PAG=','let DFC_MONTHS_PAG=[];');
-  src = replaceVarAutoria(src, 'let DFC_NETAS=',     'let DFC_NETAS=[];');
+  // IMPORTANTE: parseDFC() só ATUALIZA subcategorias já existentes em DFC_NETAS
+  // (procura pelo "label" em um Map construído a partir do array atual) — ele
+  // nunca cria itens novos. Se DFC_NETAS fosse zerado para [] aqui, a versão
+  // publicada nunca conseguiria preencher a Análise de Pagamentos ao buscar
+  // dados.xlsx remotamente (é exatamente o bug que deixava aquele gráfico em
+  // branco no GitHub Pages). Por isso mantemos o catálogo mãe/filha/label,
+  // zerando só os valores — sem números financeiros reais no repo público,
+  // mas com a estrutura necessária para parseDFC encontrar e popular cada
+  // subcategoria assim que os dados remotos chegarem.
+  const dfcNetasSkeleton = DFC_NETAS.map(n => ({ mae: n.mae, filha: n.filha, label: n.label, vals: n.vals.map(() => 0) }));
+  src = replaceVarAutoria(src, 'let DFC_NETAS=',     'let DFC_NETAS=' + JSON.stringify(dfcNetasSkeleton) + ';');
   src = replaceVarAutoria(src, 'let CITY_AGG_DATA=','let CITY_AGG_DATA={};');
   src = replaceVarAutoria(src, 'let CITY_VENDAS=', 'let CITY_VENDAS={};');
   return garantirCDNs(src);
